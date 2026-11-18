@@ -316,3 +316,72 @@ def trends(con, n_months):
         }).reindex(months).fillna(0).T
         groups[prefix] = tbl
     return {"months": months, "by_line": by_line, "customers": cust, "groups": groups}
+
+
+# ------------------------------------------------- Group license counts --
+def _license_name(desc, group):
+    """Short licence name plus its unit, e.g. 'MDR Plus users'."""
+    p = re.sub(r"\s*-\s*(User|Users|Server|Servers)$", "", short_product(desc))
+    return p, {"User": " users", "Server": " servers"}.get(group, "")
+
+
+def group_license_counts(con, months, prefix):
+    """License quantities (no costs) per tenant whose name starts with `prefix`.
+
+    One row per tenant and licence, one column per month. Product moves from
+    PRODUCT_MOVES are followed, so a tenant that moved from MDR Complete to
+    MDR Plus stays on one row, with a note saying when it moved.
+    """
+    if not months:
+        return pd.DataFrame()
+    tn = tenants(con)
+    moves = dict(config.PRODUCT_MOVES)
+
+    def canonical(p):
+        seen = set()
+        while p in moves and p not in seen:  # follow Old>New chains
+            seen.add(p)
+            p = moves[p]
+        return p
+
+    q = "SELECT * FROM billing_lines WHERE month IN (%s)" % ",".join("?" * len(months))
+    qty = defaultdict(lambda: [0.0] * len(months))
+    names = defaultdict(lambda: [set() for _ in months])
+    for l in con.execute(q, months):
+        cust = customer_name(tn, l["account_id"], l["account_name"])
+        if not cust.lower().startswith(prefix.lower()):
+            continue
+        prod, unit = _license_name(l["product_description"], l["product_group"])
+        key = (cust, canonical(prod) + unit)
+        i = months.index(l["month"])
+        qty[key][i] += l["quantity"]
+        names[key][i].add(prod)
+
+    label = lambda m: dt.date.fromisoformat(m + "-01").strftime("%b %Y")
+    full = lambda m: dt.date.fromisoformat(m + "-01").strftime("%B")
+    rows = []
+    for (cust, lic), v in qty.items():
+        seen = [i for i, x in enumerate(v) if x]
+        notes = []
+        if seen and seen[0] > 0:
+            notes.append(f"New in {full(months[seen[0]])}")
+        if seen and seen[-1] < len(months) - 1:
+            notes.append(f"Not billed after {full(months[seen[-1]])}")
+        prods = [names[(cust, lic)][i] for i in seen]
+        for a, b, i in zip(prods, prods[1:], seen[1:]):
+            if a and b and a != b:
+                notes.append(f"Moved from {', '.join(sorted(a))} to {', '.join(sorted(b))} in {full(months[i])}")
+        row = {"Tenant": cust, "License": lic}
+        row.update({label(m): int(round(x)) for m, x in zip(months, v)})
+        row[f"Change {label(months[0])} to {label(months[-1])}"] = int(round(v[-1] - v[0]))
+        row["Notes"] = "; ".join(n if i == 0 else n[0].lower() + n[1:] for i, n in enumerate(notes))
+        rows.append(row)
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    df = df.sort_values(["Tenant", "License"], key=lambda s: s.str.lower()).reset_index(drop=True)
+    num = [c for c in df.columns if c not in ("Tenant", "License", "Notes")]
+    totals = df.groupby("License")[num].sum().reset_index()
+    totals.insert(0, "Tenant", f"Total, all {prefix} tenants")
+    totals["Notes"] = ""
+    return pd.concat([df, totals], ignore_index=True)

@@ -196,6 +196,34 @@ elif page == "Trends":
                      .map(color_change, subset=["Change"]), use_container_width=True)
         st.caption(f"Individual {prefix} tenants are still listed in the customer table below.")
 
+        safe = "".join(ch if ch.isalnum() else "-" for ch in prefix).strip("-").lower() or "group"
+        tab_cost, tab_counts = st.tabs([f"{prefix} tenants (with costs)", f"{prefix} license counts (no costs)"])
+
+        with tab_cost:
+            gc = t["customers"][t["customers"]["Customer"].str.lower().str.startswith(prefix.lower())]
+            gc = gc.sort_values("Change", key=lambda s: -s.abs())
+            st.caption("For your own use. Costs are Sophos's price to you.")
+            st.dataframe(gc.style.map(color_change, subset=["Change"])
+                         .format({**{m: money for m in months}, "Change": money,
+                                  "Change %": lambda x: "new" if x is None or pd.isna(x) else f"{x:+.1%}"}),
+                         hide_index=True, use_container_width=True, height=420,
+                         column_config={m: month_label(m) for m in months})
+            st.download_button(f"Download {prefix} tenants as CSV (with costs)", gc.to_csv(index=False),
+                               f"{safe}-tenants-{first}-to-{last}.csv", "text/csv", key=f"dl-cost-{safe}")
+
+        with tab_counts:
+            lc = analysis.group_license_counts(con, months, prefix)
+            if lc.empty:
+                st.info(f"No licenses found for {prefix} in this period.")
+            else:
+                change_col = [c for c in lc.columns if c.startswith("Change")][0]
+                st.caption("License quantities only: no prices or costs, so this table is safe to send to the customer.")
+                st.dataframe(lc.style.map(lambda v: color_change(v), subset=[change_col])
+                             .format({change_col: "{:+d}"}),
+                             hide_index=True, use_container_width=True, height=420)
+                st.download_button(f"Download {prefix} license counts as CSV (no costs)", lc.to_csv(index=False),
+                                   f"{safe}-license-counts-{first}-to-{last}.csv", "text/csv", key=f"dl-counts-{safe}")
+
     st.subheader("By customer (largest change first)")
     cust = t["customers"]
     f1, f2 = st.columns(2)

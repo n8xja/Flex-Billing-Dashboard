@@ -77,7 +77,7 @@ Sophos tenants are billed one of three ways. You can rename how each appears on 
 
 | Setting | What it does | Default |
 |---|---|---|
-| `GROUP_PREFIXES` | Groups of tenants to total together on the Trends page. Any customer whose name **starts with** one of these words is included in that group's call-out. Separate several with commas. The individual tenants still appear in the full customer list. | empty (no groups) |
+| `GROUP_PREFIXES` | Groups of tenants to total together on the Trends page. Any customer whose name **starts with** one of these words is included in that group. Separate several with commas. Each group gets a combined call-out, a per-tenant breakout with costs, and a license-counts table with **no costs**, each with a **Download as CSV** button. The cost-free one is meant for sending to the customer. The individual tenants still appear in the full customer list. | empty (no groups) |
 | `PRODUCT_MOVES` | Product changes to show as *"Moved X → Y"* rather than a loss and a gain. Format: `Old>New;Old>New`, using the product names as the dashboard shows them (without "Sophos "). | `MDR Complete>MDR Plus;MDR Essentials>MDR` |
 | `FIREWALL_STALE_DAYS` | Days a firewall can go without reporting to Sophos before it stops counting as live | `35` |
 

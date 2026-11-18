@@ -12,7 +12,7 @@ It reads your partner account through the Sophos Central API (**read-only**), ke
 |---|---|
 | **Flex changes** | The latest monthly usage report compared with today's live license counts, per customer and product, with the monthly dollar impact. Use it before your distributor's billing day to adjust customer invoices. Covers per-user/server products and firewall subscriptions (matched by serial number). |
 | **Firewalls** | Firewall licensing exceptions: a Flex subscription alongside an active term license (paying twice), billed while offline, connected with no protection, stale Flex subscriptions, billed but not managed in Central. HA standby units count as covered when their primary is licensed. |
-| **Trends** | Monthly billing by product line and by customer over 3, 6, 12 or 24 months, with growth in green and loss in red. Optional combined call-outs for groups of related tenants. Product renames (e.g. MDR Complete → MDR Plus) are shown as moves, not as a loss plus a gain. |
+| **Trends** | Monthly billing by product line and by customer over 3, 6, 12 or 24 months, with growth in green and loss in red. Optional call-outs for groups of related tenants, each with a per-tenant breakout and a **license-counts table with no prices**, both downloadable as CSV (the cost-free one is safe to send to the customer). Product renames (e.g. MDR Complete → MDR Plus) are shown as moves, not as a loss plus a gain. |
 | **Data status** | Collection history and the monthly reports stored. |
 
 Everything can be renamed and branded (dashboard name, company name, logo, icon, accent colour, footer, labels) from one settings file. See **[CUSTOMIZING.md](CUSTOMIZING.md)**.
