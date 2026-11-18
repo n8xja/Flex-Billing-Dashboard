@@ -196,25 +196,91 @@ You should see something like `Docker Compose version v2...`.
 
 ---
 
-## Step 5: Download the project to the server
+## Step 5: Download the project to the server (with Git)
 
-Paste this. (If you made your own copy in step 2, use your copy's address instead; it's under the green **Code** button.)
+### What Git and "cloning" are, in plain words
+
+The project's files live on **GitHub**, a website for sharing software. **Git** is the program (installed in step 4) that copies them to your server. Copying a project from GitHub with Git is called **cloning**, and the copy on your server is a **clone**.
+
+A clone isn't just a download. It remembers where it came from, so later one command (`bash update.sh`) can fetch the latest version without starting over. Your own settings, data and logos are kept separate and are never touched by an update.
+
+You only clone once. After that, you update.
+
+### 5.1 Make sure you're in your home folder
+
+The clone goes into a new folder inside whichever folder you're currently in. Your **home folder** is the simplest place. Type:
+
+```
+cd ~
+```
+
+(`~` is short for "my home folder".) To see where you are, type `pwd`. It answers with something like `/home/yourname`.
+
+### 5.2 Check that Git is installed
+
+```
+git --version
+```
+
+You should see something like `git version 2.43.0`. Any number is fine. If it says `command not found`, go back to step 4 and run the line that installs Git.
+
+### 5.3 Clone the project
+
+Paste this line exactly and press Enter:
 
 ```
 git clone https://github.com/n8xja/Flex-Billing-Dashboard.git
 ```
 
-It prints a few lines and finishes in seconds.
+**What you should see**, finishing in a few seconds:
 
-> **Using a private copy (step 2)?** The server has to sign in to GitHub first. Run `gh auth login` and answer with the arrow keys and Enter: **GitHub.com**, **HTTPS**, **Yes**, **Login with a web browser**. It shows an 8-character code (like `ABCD-1234`). On your own computer go to https://github.com/login/device, type the code and approve. Then run the `git clone` line above with your copy's address.
+```
+Cloning into 'Flex-Billing-Dashboard'...
+remote: Enumerating objects: ...
+Receiving objects: 100% ...
+Resolving deltas: 100% ...
+```
 
-Go into the project folder:
+The last line may differ slightly. What matters is that the `$` prompt comes back with no line starting with `fatal:`.
+
+> **Using your own private copy from step 2?** Two changes:
+> 1. First, let the server sign in to GitHub (once only): run `gh auth login` and answer with the arrow keys and Enter: **GitHub.com**, **HTTPS**, **Yes**, **Login with a web browser**. It shows an 8-character code (like `ABCD-1234`). On your own computer go to https://github.com/login/device, type the code and approve.
+> 2. Then use **your copy's** address in the `git clone` line. It's under the green **Code** button on your copy's GitHub page.
+
+### 5.4 Go into the project folder and look around
+
+Cloning made a folder called `Flex-Billing-Dashboard`. Go into it:
 
 ```
 cd Flex-Billing-Dashboard
 ```
 
-> **Remember this:** every time you come back to the server, type `cd Flex-Billing-Dashboard` first.
+List what's inside:
+
+```
+ls
+```
+
+You should see names including `INSTALL.md`, `README.md`, `app`, `docker-compose.yml`, `setup.sh` and `start.sh`. If you do, the clone worked.
+
+> **Remember this:** every time you come back to the server, type `cd ~/Flex-Billing-Dashboard` first. All the commands in this guide are run from inside that folder.
+
+### 5.5 If the clone didn't work
+
+| What you see | What it means and what to do |
+|---|---|
+| `git: command not found` | Git isn't installed yet. Do step 4 again, then try 5.3. |
+| `fatal: destination path 'Flex-Billing-Dashboard' already exists` | You've already cloned it. Nothing's wrong. Type `cd ~/Flex-Billing-Dashboard` and carry on. To get the newest version, use `bash update.sh`. |
+| It asks for a `Username for 'https://github.com'` | GitHub couldn't find a public project at that address. Either the address has a typo (check it letter by letter; capital letters matter), or the project is private and you need the sign-in in the box under 5.3. Press **Ctrl + C** to cancel, fix it, and try again. |
+| `fatal: repository '...' not found` | Same as above: a typo in the address, or a private project you haven't signed in to. |
+| `Could not resolve host: github.com` or `Failed to connect` | The server can't reach the internet. Ask your network team to allow the server to reach `github.com` on port 443 (HTTPS). |
+| `SSL certificate problem` | Your network inspects encrypted traffic. Ask your network team to add their certificate to the server, or to let `github.com` through without inspection. |
+
+### Good to know about your clone
+
+- **Don't edit the project's program files on the server.** Change things through `.env` and the `branding` folder (CUSTOMIZING.md), which updates never touch. If a program file was edited, `bash update.sh` may stop with a message about "local changes". To throw those edits away and match GitHub again, run `git checkout -- .` (your `.env`, data and branding are not affected, because Git doesn't track them).
+- **To see which version you have:** `git log -1 --oneline` shows the latest change you have, with a short description.
+- **To check for differences from GitHub:** `git status` should say `nothing to commit, working tree clean`.
 
 ---
 
@@ -304,7 +370,7 @@ You don't need to do anything day to day. Data updates itself every morning.
 - **Before your distributor's billing day each month** (the `BILLING_DAY` setting), open **Flex changes** and update customer invoices for any differences. You can click **Collect fresh data now** in the left sidebar to get up-to-the-minute counts first.
 - **Download as CSV** under each table gives you a spreadsheet copy.
 
-**Handy commands** (connect as in step 3, then `cd Flex-Billing-Dashboard` first):
+**Handy commands** (connect as in step 3, then `cd ~/Flex-Billing-Dashboard` first):
 
 | To do this | Type |
 |---|---|
