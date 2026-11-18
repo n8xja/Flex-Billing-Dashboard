@@ -12,7 +12,7 @@ Your settings and branding files are **never uploaded to GitHub** (`.gitignore` 
 
 1. Connect to the server and go to the project folder (INSTALL.md, step 3):
    ```
-   cd SophosPartnerLicensingDashboards
+   cd Flex-Billing-Dashboard
    ```
 2. Open the settings file:
    ```

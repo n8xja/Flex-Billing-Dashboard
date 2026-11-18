@@ -25,7 +25,7 @@ It runs in **Docker**, which keeps the website in its own sealed box on the serv
    **Not sure which one you have?** After you connect in step 3, type `cat /etc/os-release` and look at the `NAME=` line. Only step 4 is different between them; every other step is the same.
 2. **The server's address**, for example `10.0.0.25`. Your network person can tell you, or see step 3.
 3. **A computer on the same network** (Windows or Mac) to do the setup from and to view the dashboard.
-4. **The project's page on GitHub:** https://github.com/n8xja/SophosPartnerLicensingDashboards
+4. **The project's page on GitHub:** https://github.com/n8xja/Flex-Billing-Dashboard
 5. *Only if you'll change the code:* a free **GitHub account** at https://github.com, for keeping your own copy (see step 2). Changing the name, logo, colours and labels doesn't count; those are settings, not code.
 
 ---
@@ -199,7 +199,7 @@ You should see something like `Docker Compose version v2...`.
 Paste this. (If you made your own copy in step 2, use your copy's address instead; it's under the green **Code** button.)
 
 ```
-git clone https://github.com/n8xja/SophosPartnerLicensingDashboards.git
+git clone https://github.com/n8xja/Flex-Billing-Dashboard.git
 ```
 
 It prints a few lines and finishes in seconds.
@@ -209,10 +209,10 @@ It prints a few lines and finishes in seconds.
 Go into the project folder:
 
 ```
-cd SophosPartnerLicensingDashboards
+cd Flex-Billing-Dashboard
 ```
 
-> **Remember this:** every time you come back to the server, type `cd SophosPartnerLicensingDashboards` first.
+> **Remember this:** every time you come back to the server, type `cd Flex-Billing-Dashboard` first.
 
 ---
 
@@ -302,7 +302,7 @@ You don't need to do anything day to day. Data updates itself every morning.
 - **Before your distributor's billing day each month** (the `BILLING_DAY` setting), open **Flex changes** and update customer invoices for any differences. You can click **Collect fresh data now** in the left sidebar to get up-to-the-minute counts first.
 - **Download as CSV** under each table gives you a spreadsheet copy.
 
-**Handy commands** (connect as in step 3, then `cd SophosPartnerLicensingDashboards` first):
+**Handy commands** (connect as in step 3, then `cd Flex-Billing-Dashboard` first):
 
 | To do this | Type |
 |---|---|
@@ -335,7 +335,7 @@ The browser warning goes away on computers that trust your CA.
 | The program (this project) | GitHub | **Yes.** Rebuild any time with steps 4 to 9. |
 | Your settings, incl. branding text (`.env`) | Only on the server | **No, on purpose**, because it holds your Sophos secret. If the server is lost, make a new Sophos credential (step 1) and redo your settings. Keep a note of your branding choices somewhere safe. |
 | Your logo and icon (`branding` folder) | Only on the server | **No.** Keep the original files on your computer. |
-| Collected history (`data` folder) | Only on the server | **No.** Monthly billing reports re-download automatically, but daily license snapshots can't be recreated. If your data center already backs up this server, ask for the `SophosPartnerLicensingDashboards/data` folder to be included. |
+| Collected history (`data` folder) | Only on the server | **No.** Monthly billing reports re-download automatically, but daily license snapshots can't be recreated. If your data center already backs up this server, ask for the `Flex-Billing-Dashboard/data` folder to be included. |
 | Sign-ins (`data/users.json`) | Only on the server | **No.** Recreate them with step 8. |
 
 The `.gitignore` file stops your secret, settings, data, certificates and branding files from ever being uploaded to GitHub.
@@ -347,7 +347,7 @@ The `.gitignore` file stops your secret, settings, data, certificates and brandi
 | What you see | What to do |
 |---|---|
 | `Permission denied` when running a command | Put `sudo ` in front of it, or make sure you typed `bash` before the script name. |
-| `No such file or directory` | You're probably not in the project folder. Type `cd ~/SophosPartnerLicensingDashboards` and try again. |
+| `No such file or directory` | You're probably not in the project folder. Type `cd ~/Flex-Billing-Dashboard` and try again. |
 | Browser says it can't connect | Run `bash status.sh`. All three parts should say **Up** or **running**. If not, run `bash start.sh`. If they're running, the server's firewall is probably blocking the page: repeat the firewall commands in step 4 (4A item 7 for Rocky, 4B item 3 for Ubuntu). If it still fails, ask your network person whether port 443 is blocked between your computer and the server. |
 | `sudo: ... is not in the sudoers file` (Rocky) | Your server user isn't allowed to run administrator commands. Ask whoever manages the server to add you to the **wheel** group, then sign out (`exit`) and back in. |
 | `Permission denied` messages in `bash status.sh` output, mentioning `/data` or `sophos.db` (Rocky) | Run `bash setup.sh` again, then `bash stop.sh` and `bash start.sh`. If it continues, make sure `docker-compose.yml` still has `:z` at the end of the `./data:/data:z` and `./certs:/etc/nginx/certs:z` lines. |
