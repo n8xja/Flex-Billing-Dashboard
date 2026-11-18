@@ -44,15 +44,21 @@ BRAND_ICON = _env("BRAND_ICON", "🛡️")          # emoji, or file name inside
 
 
 def branding_file(name):
-    """Full path of a file in the branding folder, or None if it isn't there."""
-    if not name:
+    """Full path of a readable file in the branding folder, or None.
+
+    Never raises: a missing, unreadable or oddly named file (or an emoji such
+    as the default icon) just means "no file", and the dashboard carries on.
+    """
+    if not name or "/" in name or "\\" in name:
         return None
-    p = (BRANDING_DIR / name).resolve()
     try:
+        p = (BRANDING_DIR / name).resolve()
         p.relative_to(BRANDING_DIR.resolve())  # stay inside the branding folder
-    except ValueError:
-        return None
-    return p if p.is_file() else None
+        if p.is_file() and os.access(p, os.R_OK):
+            return p
+    except (OSError, ValueError):
+        pass
+    return None
 
 
 # --------------------------------------------------------------- labels --
