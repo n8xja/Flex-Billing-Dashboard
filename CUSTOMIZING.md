@@ -93,7 +93,19 @@ GROUP_PREFIXES=Acme,Contoso
 |---|---|---|
 | `SERVER_NAME` | The name people type in the browser. Used in the self-signed certificate. | `billing-dashboard` |
 | `HTTPS_PORT` | The port for the secure web page | `443` |
-| `HTTP_PORT` | The port that redirects to the secure page | `80` |
+| `HTTP_PORT` | The plain-HTTP port. It only redirects visitors to the secure page, keeping the port number. | `80` |
+| `LISTEN_ADDRESS` | Listen on only one of the server's IP addresses, e.g. `10.0.0.25`. Useful on servers with more than one network card. Leave empty to listen on all of them. | empty |
+
+**Changing a port, step by step** (example: moving the dashboard to 8443 because something else uses 443):
+
+1. `nano .env`, change `HTTPS_PORT=443` to `HTTPS_PORT=8443`, save (**Ctrl + O**, **Enter**) and exit (**Ctrl + X**).
+2. Restart: `bash stop.sh`, then `bash start.sh`. The message at the end shows the new address, e.g. `https://10.0.0.25:8443`.
+3. Let the new port through the server's firewall: `bash open-firewall.sh`
+4. Optional, if nothing else needs the old port: `bash open-firewall.sh --close 443`
+
+From then on, people use the address with the port: `https://10.0.0.25:8443`. Typing `http://10.0.0.25` still works if `HTTP_PORT` is 80; it forwards to the right port automatically.
+
+Pick a port between 1024 and 65535 that nothing else on the server uses, such as 8443 or 9443. INSTALL.md, "Opening ports in the server's firewall", has the full firewall instructions.
 
 If you change `SERVER_NAME` after the first start, delete the old self-signed certificate so a new one is made with the new name:
 

@@ -1,7 +1,8 @@
-# Plain http only redirects to https
+# Plain http only redirects to https.
+# __HTTPS_PORT_SUFFIX__ is filled in at start-up: empty for port 443, otherwise ":<port>".
 server {
     listen 80;
-    return 301 https://$host$request_uri;
+    return 301 https://$host__HTTPS_PORT_SUFFIX__$request_uri;
 }
 
 server {

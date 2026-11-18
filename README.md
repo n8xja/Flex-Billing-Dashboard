@@ -32,7 +32,7 @@ You need:
 |---|---|
 | `collector` | Python. Reads the Sophos Partner API daily at `COLLECT_HOUR`, or when *Collect fresh data now* is pressed. Stores everything in SQLite (`data/sophos.db`). Keeps `RETENTION_MONTHS` of history. |
 | `web` | Streamlit dashboard with local sign-in (bcrypt password hashes in `data/users.json`). Has no access to the Sophos secret. |
-| `proxy` | nginx. HTTPS on 443, redirects 80 → 443. Creates a self-signed certificate in `certs/` on first start; drop in your own certificate to replace it. |
+| `proxy` | nginx. HTTPS on `HTTPS_PORT` (default 443); `HTTP_PORT` (default 80) redirects to it, keeping the port. Optional `LISTEN_ADDRESS` binds to one IP. `open-firewall.sh` opens the ports in firewalld or ufw. Creates a self-signed certificate in `certs/` on first start; drop in your own certificate to replace it. |
 
 Folder mounts carry `:z` so they work with SELinux enforcing (Rocky/RHEL); Docker ignores it where SELinux is off.
 

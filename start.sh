@@ -7,6 +7,12 @@ if grep -q "paste-the-client" .env 2>/dev/null || [ ! -f .env ]; then
   exit 1
 fi
 sudo docker compose up -d --build
+
+setting() { v=$(grep -E "^$1=" .env | tail -1 | cut -d= -f2- | tr -d '"'"'"' '); echo "${v:-$2}"; }
+PORT=$(setting HTTPS_PORT 443)
+ADDR=$(setting LISTEN_ADDRESS "$(hostname -I | awk '{print $1}')")
+[ "$PORT" = "443" ] && SUFFIX="" || SUFFIX=":$PORT"
 echo
-echo "Started. Open https://$(hostname -I | awk '{print $1}') in a web browser."
+echo "Started. Open https://$ADDR$SUFFIX in a web browser."
+echo "Can't reach it from another computer? Run:  bash open-firewall.sh"
 echo "The first data collection takes about 10 to 15 minutes."

@@ -37,10 +37,12 @@ services:
   proxy:
     build: ./nginx
     ports:
-      - "${HTTPS_PORT:-443}:443"
-      - "${HTTP_PORT:-80}:80"
+      # LISTEN_ADDRESS (optional) limits the dashboard to one of the server's addresses
+      - "${LISTEN_ADDRESS:+${LISTEN_ADDRESS}:}${HTTPS_PORT:-443}:443"
+      - "${LISTEN_ADDRESS:+${LISTEN_ADDRESS}:}${HTTP_PORT:-80}:80"
     environment:
       CERT_NAME: ${SERVER_NAME:-billing-dashboard}
+      HTTPS_PORT: ${HTTPS_PORT:-443}
     volumes:
       - ./certs:/etc/nginx/certs:z
     depends_on:

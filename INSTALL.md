@@ -154,6 +154,8 @@ sudo firewall-cmd --reload
 
 Both should answer `success`.
 
+> These two lines open the standard web ports (443 and 80). If you later move the dashboard to other ports, see **"Opening ports in the server's firewall"** near the end of this guide.
+
 > **About SELinux:** Rocky has an extra security layer called SELinux that is switched on. Leave it on. The project is already set up to work with it; that's what the `:z` in `docker-compose.yml` is for.
 
 Now skip down to **"Check it worked"** below.
@@ -311,6 +313,7 @@ You don't need to do anything day to day. Data updates itself every morning.
 | Start it again | `bash start.sh` |
 | Get the latest version of the project | `bash update.sh` |
 | Change the name, logo, colours or labels | see CUSTOMIZING.md |
+| Let the dashboard's ports through the server's firewall | `bash open-firewall.sh` |
 | Add or change a sign-in | `bash add-user.sh name` |
 | Leave the server window | `exit` |
 
@@ -325,6 +328,58 @@ When your IT team gives you a certificate for the dashboard's name:
 3. Restart: `bash stop.sh` then `bash start.sh`.
 
 The browser warning goes away on computers that trust your CA.
+
+---
+
+## Opening ports in the server's firewall
+
+Rocky Linux (and AlmaLinux and Red Hat) has a firewall called **firewalld** switched on from the start. It blocks web pages from other computers until you allow the dashboard's ports. Step 4A opened the standard ones (443 and 80). Do this section if you changed `HTTPS_PORT` or `HTTP_PORT` in `.env`, or if other computers can't reach the dashboard.
+
+### The easy way
+
+From the project folder:
+
+```
+bash open-firewall.sh
+```
+
+It reads `HTTPS_PORT` and `HTTP_PORT` from your settings, opens both, and lists what the firewall now allows. It also works on Ubuntu (with its `ufw` firewall), and does nothing if the server has no firewall switched on. Running it more than once is harmless.
+
+To close a port you no longer use, for example 443 after moving to 8443:
+
+```
+bash open-firewall.sh --close 443
+```
+
+### By hand on Rocky (what the script does)
+
+Paste one line at a time. Replace `8443` with your port number.
+
+1. **Allow the port.** `--permanent` makes it last after a reboot.
+   ```
+   sudo firewall-cmd --permanent --add-port=8443/tcp
+   ```
+2. **Apply the change.** Permanent changes only take effect after a reload.
+   ```
+   sudo firewall-cmd --reload
+   ```
+   Both lines should answer `success`.
+3. **Check it worked.** The port should appear after `ports:`:
+   ```
+   sudo firewall-cmd --list-all
+   ```
+4. **To close a port again:**
+   ```
+   sudo firewall-cmd --permanent --remove-port=8443/tcp
+   sudo firewall-cmd --reload
+   ```
+   Ports 443 and 80 were opened by name in step 4A, so close those by name instead: `--remove-service=https` or `--remove-service=http`.
+
+> **Good to know:**
+> - **"FirewallD is not running"** means the firewall is switched off, so nothing is being blocked and you don't need these steps.
+> - **Docker manages part of the network itself**, and on some servers a Docker port gets through even before you open it. Open it anyway; it keeps the firewall settings matching what you actually use.
+> - **SELinux needs no change** for a new port. The dashboard's port belongs to Docker, which SELinux already allows.
+> - **Your network may have its own firewall** between your computer and the server. If the server's firewall is open and you still can't connect, ask your network team to allow the port too.
 
 ---
 
@@ -348,13 +403,14 @@ The `.gitignore` file stops your secret, settings, data, certificates and brandi
 |---|---|
 | `Permission denied` when running a command | Put `sudo ` in front of it, or make sure you typed `bash` before the script name. |
 | `No such file or directory` | You're probably not in the project folder. Type `cd ~/Flex-Billing-Dashboard` and try again. |
-| Browser says it can't connect | Run `bash status.sh`. All three parts should say **Up** or **running**. If not, run `bash start.sh`. If they're running, the server's firewall is probably blocking the page: repeat the firewall commands in step 4 (4A item 7 for Rocky, 4B item 3 for Ubuntu). If it still fails, ask your network person whether port 443 is blocked between your computer and the server. |
+| Browser says it can't connect | Run `bash status.sh`. All three parts should say **Up** or **running**. If not, run `bash start.sh`. If they're running, the server's firewall is probably blocking the page: run `bash open-firewall.sh` (see "Opening ports in the server's firewall"). If it still fails, ask your network person whether the port is blocked between your computer and the server. |
 | `sudo: ... is not in the sudoers file` (Rocky) | Your server user isn't allowed to run administrator commands. Ask whoever manages the server to add you to the **wheel** group, then sign out (`exit`) and back in. |
 | `Permission denied` messages in `bash status.sh` output, mentioning `/data` or `sophos.db` (Rocky) | Run `bash setup.sh` again, then `bash stop.sh` and `bash start.sh`. If it continues, make sure `docker-compose.yml` still has `:z` at the end of the `./data:/data:z` and `./certs:/etc/nginx/certs:z` lines. |
 | `Unable to find a match: docker-ce` (Rocky) | The Docker software source wasn't added. Repeat 4A item 3 exactly, then item 4. |
 | Dashboard says "first data collection failed" | The Sophos ID or secret in `.env` is probably wrong. Fix it with `nano .env`, then run `bash stop.sh` and `bash start.sh`. |
 | Numbers look out of date | Click **Collect fresh data now** in the sidebar, or check **Data status** for errors. |
 | Forgot your dashboard password | `bash add-user.sh yourname` sets a new one. |
-| Port 443 is already in use | Something else on the server uses it. In `.env`, change `HTTPS_PORT=443` to `HTTPS_PORT=8443`, restart, and open `https://10.0.0.25:8443` instead. Also open that port in the firewall: on Rocky `sudo firewall-cmd --permanent --add-port=8443/tcp && sudo firewall-cmd --reload`; on Ubuntu `sudo ufw allow 8443/tcp`. |
+| `port is already allocated` or `address already in use` when starting | Something else on the server uses that port. In `.env`, change `HTTPS_PORT=443` to `HTTPS_PORT=8443` (or `HTTP_PORT=80` to `HTTP_PORT=8080`), run `bash stop.sh` and `bash start.sh`, then `bash open-firewall.sh`. Open `https://10.0.0.25:8443` from then on. CUSTOMIZING.md has the step-by-step. |
+| `cannot assign requested address` when starting | `LISTEN_ADDRESS` in `.env` isn't one of this server's addresses. Type `hostname -I` to see them, fix the setting (or leave it empty), and start again. |
 
 To see detailed messages from the data collector: `sudo docker compose logs --tail 50 collector`

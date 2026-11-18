@@ -1,6 +1,7 @@
 FROM nginx:1.27-alpine
 RUN apk add --no-cache openssl
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# The settings are written from this template at start-up (see 10-prepare.sh)
+COPY default.conf.template /etc/nginx/default.conf.template
 # nginx runs every script in /docker-entrypoint.d before it starts
-COPY 10-make-certificate.sh /docker-entrypoint.d/10-make-certificate.sh
-RUN chmod +x /docker-entrypoint.d/10-make-certificate.sh
+COPY 10-prepare.sh /docker-entrypoint.d/10-prepare.sh
+RUN chmod +x /docker-entrypoint.d/10-prepare.sh && rm -f /etc/nginx/conf.d/default.conf
