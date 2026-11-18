@@ -5,7 +5,14 @@ import time
 import pandas as pd
 import streamlit as st
 
-from app import analysis, config, db, users
+# Streamlit puts only this file's folder (app/) on the import path. Add the
+# project folder above it so "from app import ..." works however it's started.
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from app import analysis, config, db, users  # noqa: E402
 
 _icon = config.branding_file(config.BRAND_ICON)
 st.set_page_config(page_title=config.BRAND_NAME, page_icon=str(_icon) if _icon else (config.BRAND_ICON or None), layout="wide")
