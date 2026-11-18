@@ -1,0 +1,13 @@
+# Secrets and private data: never upload these to GitHub
+.env
+data/
+certs/
+
+# Your own branding files stay private (only the README in this folder is shared)
+branding/*
+!branding/README.md
+
+# Python leftovers
+__pycache__/
+*.pyc
+.venv/

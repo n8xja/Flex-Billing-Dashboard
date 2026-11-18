@@ -1,0 +1,230 @@
+"""Web dashboard (Streamlit). Started by the container; open it in a browser."""
+import datetime as dt
+import time
+
+import pandas as pd
+import streamlit as st
+
+from app import analysis, config, db, users
+
+_icon = config.branding_file(config.BRAND_ICON)
+st.set_page_config(page_title=config.BRAND_NAME, page_icon=str(_icon) if _icon else (config.BRAND_ICON or None), layout="wide")
+_logo = config.branding_file(config.BRAND_LOGO)
+if _logo:
+    st.logo(str(_logo))
+DAY = config.ordinal(config.BILLING_DAY)
+FLEX = config.LABEL_FLEX
+
+
+def footer():
+    if config.BRAND_FOOTER:
+        st.divider()
+        st.caption(config.BRAND_FOOTER)
+
+GREEN, RED = "background-color:#e6f4ea;color:#1e6b34", "background-color:#fce8e6;color:#a1271b"
+
+
+# ----------------------------------------------------------------- sign-in --
+def sign_in():
+    if st.session_state.get("user"):
+        return True
+    st.title(config.BRAND_NAME)
+    if config.BRAND_TAGLINE:
+        st.write(config.BRAND_TAGLINE)
+    fails = st.session_state.get("fails", 0)
+    with st.form("login"):
+        u = st.text_input("User name")
+        p = st.text_input("Password", type="password")
+        ok = st.form_submit_button("Sign in")
+    if ok:
+        time.sleep(min(10, 1 + fails))  # slows down password guessing
+        if users.check(u, p):
+            st.session_state.user = u.strip().lower()
+            st.session_state.fails = 0
+            st.rerun()
+        else:
+            st.session_state.fails = fails + 1
+            st.error("That user name and password did not match.")
+    if not users.load():
+        st.info("No users have been set up yet. Follow the 'Create your sign-in' step in the install guide.")
+    footer()
+    return False
+
+
+if not sign_in():
+    st.stop()
+
+
+# ------------------------------------------------------------------ helpers --
+def money(v):
+    return "" if pd.isna(v) else (f"-${abs(v):,.2f}" if v < 0 else f"${v:,.2f}")
+
+
+def color_change(v):
+    try:
+        return GREEN if v > 0.005 else (RED if v < -0.005 else "")
+    except TypeError:
+        return ""
+
+
+def month_label(m):
+    return dt.date.fromisoformat(m + "-01").strftime(f"%b {config.BILLING_DAY}, %Y")
+
+
+con = db.connect()
+last_run = con.execute("SELECT * FROM runs ORDER BY id DESC LIMIT 1").fetchone()
+last_ok = con.execute("SELECT * FROM runs WHERE status='ok' ORDER BY id DESC LIMIT 1").fetchone()
+
+with st.sidebar:
+    if config.BRAND_ORG:
+        st.markdown(f"### {config.BRAND_ORG}")
+    st.markdown(f"Signed in as **{st.session_state.user}**")
+    page = st.radio("Page", [f"{FLEX} changes", "Firewalls", "Trends", "Data status"], label_visibility="collapsed")
+    st.divider()
+    if last_ok:
+        st.caption(f"Data last collected {last_ok['finished_at'].replace('T', ' ')}")
+    if last_run and last_run["status"] == "running":
+        st.info("A data collection is running now. Refresh the page in a few minutes.")
+    elif config.REFRESH_FLAG.exists():
+        st.info("Refresh requested. It starts within a minute and takes about 10 minutes.")
+    elif st.button("Collect fresh data now"):
+        config.REFRESH_FLAG.touch()
+        st.rerun()
+    if st.button("Sign out"):
+        st.session_state.clear()
+        st.rerun()
+
+if not last_ok:
+    st.title(config.BRAND_NAME)
+    if last_run and last_run["status"] == "failed":
+        st.error(f"The first data collection failed: {last_run['message']}")
+        st.write("Check the Sophos API ID and secret in the .env file, then restart (see the install guide).")
+    else:
+        st.info("The first data collection is running. It takes about 10 to 15 minutes. Refresh this page after that.")
+    st.stop()
+
+
+# ------------------------------------------------------------- Flex changes --
+if page == f"{FLEX} changes":
+    df, info = analysis.flex_changes(con)
+    st.title(f"{FLEX} changes since the last bill")
+    if df.empty:
+        st.success(f"Every {FLEX} quantity matches the last usage report.")
+        st.stop()
+    st.caption(f"Compares the usage report Sophos published for **{month_label(info['month'])}** with live counts "
+               f"collected **{info['snapshot']}**. Use this before the {DAY} to adjust what you charge each customer.")
+    f1, f2, f3 = st.columns(3)
+    types = f1.multiselect("Customer type", sorted(df["Type"].unique()), default=[t for t in [FLEX] if t in set(df["Type"])] or None)
+    cats = f2.multiselect("Category", sorted(df["Category"].unique()))
+    search = f3.text_input("Customer name contains")
+    v = df.copy()
+    if types:
+        v = v[v["Type"].isin(types)]
+    if cats:
+        v = v[v["Category"].isin(cats)]
+    if search:
+        v = v[v["Customer"].str.contains(search, case=False)]
+    up = v[v["Change"] > 0]
+    down = v[v["Change"] < 0]
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Increases (bill customers more)", money(up["Monthly impact"].sum()), f"{len(up)} lines")
+    c2.metric("Decreases (bill customers less)", money(down["Monthly impact"].sum()), f"{len(down)} lines", delta_color="off")
+    c3.metric("Net monthly change", money(v["Monthly impact"].sum()))
+    show = v[["Customer", "Type", "Category", "Product", "Billed", "Live", "Change", "UnitPrice", "Monthly impact", "Basis", "Note"]]
+    st.dataframe(
+        show.style.map(color_change, subset=["Change", "Monthly impact"])
+            .format({"UnitPrice": money, "Monthly impact": money, "Billed": "{:,.0f}", "Live": "{:,.0f}", "Change": "{:+,.0f}"}),
+        hide_index=True, use_container_width=True, height=600,
+        column_config={"UnitPrice": "Unit price", "Billed": f"Billed ({info['month']})", "Live": f"Live ({info['snapshot']})"})
+    st.download_button("Download as CSV", show.to_csv(index=False), f"flex-changes-{info['snapshot']}.csv", "text/csv")
+
+# ---------------------------------------------------------------- Firewalls --
+elif page == "Firewalls":
+    df, info = analysis.firewall_exceptions(con)
+    st.title("Firewall licensing checks")
+    st.caption(f"Firewall serials on the {month_label(info['month']) if info.get('month') else 'latest'} usage report, "
+               f"matched to Central and to each unit's licenses as of **{info.get('snapshot')}**. "
+               "HA standby units are treated as covered when their primary is licensed.")
+    if df.empty:
+        st.success("No firewall licensing issues found.")
+        st.stop()
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Firewall billing on last report", money(info["firewall_billing"]))
+    c2.metric("Paying twice", money(df.loc[df["Issue"] == "Paying twice", "Billed ($/mo)"].sum()))
+    c3.metric("Billed while offline", money(df.loc[df["Issue"] == "Billed while offline", "Billed ($/mo)"].sum()))
+    c4.metric(f"{FLEX} firewalls with no protection", int(((df["Issue"] == "No protection") & (df["Customer type"] == FLEX)).sum()))
+    issues = st.multiselect("Issue", list(dict.fromkeys(df["Issue"])), default=None)
+    v = df[df["Issue"].isin(issues)] if issues else df
+    st.dataframe(v.style.format({"Billed ($/mo)": money}), hide_index=True, use_container_width=True, height=600)
+    st.download_button("Download as CSV", v.to_csv(index=False), f"firewalls-{info['snapshot']}.csv", "text/csv")
+
+# ------------------------------------------------------------------- Trends --
+elif page == "Trends":
+    st.title("Billing trend")
+    available = len(analysis.billing_months(con))
+    options = [n for n in (3, 6, 12, 24) if n <= max(available, 3)]
+    n = st.segmented_control("Period", options, default=options[0], format_func=lambda x: f"{x} months") or options[0]
+    t = analysis.trends(con, n + 1)
+    if not t:
+        st.info("No usage reports collected yet.")
+        st.stop()
+    months = t["months"]
+    first, last = months[0], months[-1]
+    st.caption(f"From the usage report on each {DAY}: {month_label(first)} to {month_label(last)}. "
+               "Green is growth, red is loss.")
+
+    bl = t["by_line"].copy()
+    bl["Change"] = bl[last] - bl[first]
+    bl["Change %"] = [None if a == 0 else (b - a) / a for a, b in zip(bl[first], bl[last])]
+    total = bl.loc["Total"]
+    c1, c2, c3 = st.columns(3)
+    c1.metric(f"Monthly bill, {month_label(first)}", money(total[first]))
+    c2.metric(f"Monthly bill, {month_label(last)}", money(total[last]), money(total["Change"]))
+    c3.metric("Change", f"{total['Change %']:+.1%}" if total["Change %"] is not None else "")
+
+    st.subheader("By product line")
+    st.bar_chart(t["by_line"].drop(index="Total").T.rename(index=month_label), stack=True)
+    st.dataframe(bl.style.map(color_change, subset=["Change"])
+                 .format({**{m: money for m in months}, "Change": money, "Change %": lambda x: "" if x is None or pd.isna(x) else f"{x:+.1%}"}),
+                 use_container_width=True)
+
+    for prefix, g in t["groups"].items():
+        st.subheader(f"{prefix} call-out (all {prefix} tenants combined)")
+        g = g.copy()
+        g["Change"] = g[last] - g[first]
+        st.dataframe(g.style.format(lambda x: f"{x:,.2f}" if isinstance(x, float) and x % 1 else f"{x:,.0f}")
+                     .map(color_change, subset=["Change"]), use_container_width=True)
+        st.caption(f"Individual {prefix} tenants are still listed in the customer table below.")
+
+    st.subheader("By customer (largest change first)")
+    cust = t["customers"]
+    f1, f2 = st.columns(2)
+    types = f1.multiselect("Customer type ", sorted(cust["Type"].unique()))
+    only = f2.radio("Show", ["All", "Growth", "Loss", "Changed only"], horizontal=True)
+    v = cust if not types else cust[cust["Type"].isin(types)]
+    if only == "Growth":
+        v = v[v["Change"] > 0.005]
+    elif only == "Loss":
+        v = v[v["Change"] < -0.005]
+    elif only == "Changed only":
+        v = v[v["Change"].abs() > 0.005]
+    st.dataframe(v.style.map(color_change, subset=["Change"])
+                 .format({**{m: money for m in months}, "Change": money, "Change %": lambda x: "new" if x is None or pd.isna(x) else f"{x:+.1%}"}),
+                 hide_index=True, use_container_width=True, height=600,
+                 column_config={m: month_label(m) for m in months})
+    st.download_button("Download as CSV", v.to_csv(index=False), f"trend-{first}-to-{last}.csv", "text/csv")
+
+# -------------------------------------------------------------- Data status --
+else:
+    st.title("Data status")
+    runs = pd.read_sql("SELECT started_at, finished_at, status, message FROM runs ORDER BY id DESC LIMIT 30", con)
+    st.subheader("Recent data collections")
+    st.dataframe(runs, hide_index=True, use_container_width=True)
+    st.subheader("Usage reports stored")
+    st.dataframe(pd.read_sql("SELECT month, line_count, fetched_at FROM billing_months ORDER BY month DESC", con),
+                 hide_index=True, use_container_width=True)
+    snaps = con.execute("SELECT COUNT(DISTINCT snap_date) n, MIN(snap_date) a, MAX(snap_date) b FROM license_snapshots").fetchone()
+    st.write(f"Daily license snapshots: **{snaps['n']}** days ({snaps['a']} to {snaps['b']}). "
+             f"History older than {config.RETENTION_MONTHS} months is removed automatically.")
+
+footer()

@@ -1,0 +1,48 @@
+# Flex Billing Dashboard for Sophos Central partners
+#   Start:   docker compose up -d --build
+#   Stop:    docker compose down
+#   Logs:    docker compose logs -f
+#
+# The ':z' on each folder lets containers use it on servers with SELinux
+# (Rocky / Red Hat). It is ignored on servers without SELinux (Ubuntu).
+
+services:
+  # Pulls data from Sophos every day (and when you press "Collect fresh data now")
+  collector:
+    build: .
+    command: ["python", "-m", "app.collector"]
+    env_file: .env
+    volumes:
+      - ./data:/data:z
+    restart: unless-stopped
+
+  # The web dashboard. Not reachable directly; only through the https proxy below.
+  web:
+    build: .
+    env_file: .env
+    environment:
+      # The web page never needs the Sophos secret
+      SOPHOS_CLIENT_ID: ""
+      SOPHOS_CLIENT_SECRET: ""
+      # Accent colour for buttons and highlights (BRAND_COLOR in .env)
+      STREAMLIT_THEME_PRIMARY_COLOR: ${BRAND_COLOR:-#2563eb}
+    volumes:
+      - ./data:/data:z
+      - ./branding:/branding:ro,z
+    expose:
+      - "8501"
+    restart: unless-stopped
+
+  # Encrypts the web traffic (https). Makes its own certificate on first start.
+  proxy:
+    build: ./nginx
+    ports:
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTP_PORT:-80}:80"
+    environment:
+      CERT_NAME: ${SERVER_NAME:-billing-dashboard}
+    volumes:
+      - ./certs:/etc/nginx/certs:z
+    depends_on:
+      - web
+    restart: unless-stopped
