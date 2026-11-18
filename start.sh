@@ -6,6 +6,8 @@ if grep -q "paste-the-client" .env 2>/dev/null || [ ! -f .env ]; then
   echo "The Sophos API ID and secret are not in .env yet. Run bash setup.sh, then: nano .env"
   exit 1
 fi
+# Logos must be readable by the dashboard (some servers make new files owner-only)
+mkdir -p branding && chmod -R a+rX branding
 sudo docker compose up -d --build
 
 setting() { v=$(grep -E "^$1=" .env | tail -1 | cut -d= -f2- | tr -d '"'"'"' '); echo "${v:-$2}"; }
