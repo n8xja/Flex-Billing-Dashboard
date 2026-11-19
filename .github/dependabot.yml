@@ -1,0 +1,16 @@
+# Keeps dependencies up to date: GitHub opens a pull request when a new
+# version (including a security fix) is released.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: "/nginx"
+    schedule:
+      interval: weekly

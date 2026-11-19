@@ -61,6 +61,17 @@ def branding_file(name):
     return None
 
 
+# Appearance: "auto" follows each viewer's device (light or dark), or force "light" / "dark".
+THEME = _env("THEME", "auto").lower()
+if THEME not in ("auto", "light", "dark"):
+    THEME = "auto"
+
+# ------------------------------------------------------------- security --
+SESSION_TIMEOUT_MINUTES = int(_env("SESSION_TIMEOUT_MINUTES", "120"))   # sign out after this long idle
+SIGNIN_MAX_FAILURES = int(_env("SIGNIN_MAX_FAILURES", "5"))             # wrong passwords before a lock
+SIGNIN_LOCKOUT_MINUTES = int(_env("SIGNIN_LOCKOUT_MINUTES", "15"))      # how long a user name stays locked
+SIGNIN_MAX_PER_IP_PER_MINUTE = int(_env("SIGNIN_MAX_PER_IP_PER_MINUTE", "10"))  # failures from one address
+
 # --------------------------------------------------------------- labels --
 # What each Sophos tenant billing type is called on screen.
 LABEL_FLEX = _env("LABEL_FLEX", "Flex")    # Sophos "usage" billing

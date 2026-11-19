@@ -24,4 +24,5 @@ RUN useradd --uid 1000 --create-home sophos && mkdir -p /data && chown sophos:so
 USER sophos
 
 EXPOSE 8501
-CMD ["streamlit", "run", "app/dashboard.py"]
+# app/web.py starts Streamlit with the THEME chosen in .env
+CMD ["python", "-m", "app.web"]

@@ -8,6 +8,9 @@ if grep -q "paste-the-client" .env 2>/dev/null || [ ! -f .env ]; then
 fi
 # Logos must be readable by the dashboard (some servers make new files owner-only)
 mkdir -p branding && chmod -R a+rX branding
+# Keep the settings (Sophos secret), data and certificate key private
+chmod 600 .env 2>/dev/null || true
+sudo chmod 700 data certs 2>/dev/null || true
 sudo docker compose up -d --build
 
 setting() { v=$(grep -E "^$1=" .env | tail -1 | cut -d= -f2- | tr -d '"'"'"' '); echo "${v:-$2}"; }

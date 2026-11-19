@@ -28,30 +28,64 @@ def footer():
         st.divider()
         st.caption(config.BRAND_FOOTER)
 
-GREEN, RED = "background-color:#e6f4ea;color:#1e6b34", "background-color:#fce8e6;color:#a1271b"
+# Translucent fills with mid-tone text read well on both light and dark themes.
+GREEN = "background-color:rgba(34,160,90,0.18);color:#2f9e5f;font-weight:600"
+RED = "background-color:rgba(220,70,70,0.18);color:#d64545;font-weight:600"
+
+
+def client_ip():
+    """The viewer's address as seen by the HTTPS proxy (last X-Forwarded-For entry)."""
+    try:
+        xff = st.context.headers.get("X-Forwarded-For", "")
+        return xff.split(",")[-1].strip() or "unknown"
+    except Exception:
+        return "unknown"
+
+
+def safe_csv(df):
+    """CSV text that spreadsheet programs won't run as formulas (CSV injection).
+
+    Any text cell starting with = + - @ or a tab/return gets a leading apostrophe.
+    """
+    def fix(v):
+        return "'" + v if isinstance(v, str) and v[:1] in ("=", "+", "-", "@", "\t", "\r") else v
+    out = df.copy()
+    for c in out.columns:
+        if out[c].dtype == object:
+            out[c] = out[c].map(fix)
+    return out.to_csv(index=False)
 
 
 # ----------------------------------------------------------------- sign-in --
 def sign_in():
+    now = time.time()
     if st.session_state.get("user"):
-        return True
+        idle = now - st.session_state.get("last_seen", now)
+        if idle <= config.SESSION_TIMEOUT_MINUTES * 60:
+            st.session_state.last_seen = now
+            return True
+        users.log.info("session timed out: user=%r", st.session_state.user)
+        st.session_state.clear()
+        st.session_state.timed_out = True
     st.title(config.BRAND_NAME)
     if config.BRAND_TAGLINE:
         st.write(config.BRAND_TAGLINE)
-    fails = st.session_state.get("fails", 0)
+    if st.session_state.pop("timed_out", False):
+        st.info("You were signed out after a period of inactivity. Please sign in again.")
     with st.form("login"):
         u = st.text_input("User name")
         p = st.text_input("Password", type="password")
         ok = st.form_submit_button("Sign in")
     if ok:
-        time.sleep(min(10, 1 + fails))  # slows down password guessing
-        if users.check(u, p):
+        time.sleep(1)  # slows down password guessing
+        good, message = users.attempt(u, p, client_ip())
+        if good:
+            st.session_state.clear()          # fresh session after sign-in
             st.session_state.user = u.strip().lower()
-            st.session_state.fails = 0
+            st.session_state.last_seen = time.time()
             st.rerun()
         else:
-            st.session_state.fails = fails + 1
-            st.error("That user name and password did not match.")
+            st.error(message)
     if not users.load():
         st.info("No users have been set up yet. Follow the 'Create your sign-in' step in the install guide.")
     footer()
@@ -98,6 +132,7 @@ with st.sidebar:
         config.REFRESH_FLAG.touch()
         st.rerun()
     if st.button("Sign out"):
+        users.log.info("signed out: user=%r", st.session_state.user)
         st.session_state.clear()
         st.rerun()
 
@@ -141,9 +176,9 @@ if page == f"{FLEX} changes":
     st.dataframe(
         show.style.map(color_change, subset=["Change", "Monthly impact"])
             .format({"UnitPrice": money, "Monthly impact": money, "Billed": "{:,.0f}", "Live": "{:,.0f}", "Change": "{:+,.0f}"}),
-        hide_index=True, use_container_width=True, height=600,
+        hide_index=True, width="stretch", height=600,
         column_config={"UnitPrice": "Unit price", "Billed": f"Billed ({info['month']})", "Live": f"Live ({info['snapshot']})"})
-    st.download_button("Download as CSV", show.to_csv(index=False), f"flex-changes-{info['snapshot']}.csv", "text/csv")
+    st.download_button("Download as CSV", safe_csv(show), f"flex-changes-{info['snapshot']}.csv", "text/csv")
 
 # ---------------------------------------------------------------- Firewalls --
 elif page == "Firewalls":
@@ -162,8 +197,8 @@ elif page == "Firewalls":
     c4.metric(f"{FLEX} firewalls with no protection", int(((df["Issue"] == "No protection") & (df["Customer type"] == FLEX)).sum()))
     issues = st.multiselect("Issue", list(dict.fromkeys(df["Issue"])), default=None)
     v = df[df["Issue"].isin(issues)] if issues else df
-    st.dataframe(v.style.format({"Billed ($/mo)": money}), hide_index=True, use_container_width=True, height=600)
-    st.download_button("Download as CSV", v.to_csv(index=False), f"firewalls-{info['snapshot']}.csv", "text/csv")
+    st.dataframe(v.style.format({"Billed ($/mo)": money}), hide_index=True, width="stretch", height=600)
+    st.download_button("Download as CSV", safe_csv(v), f"firewalls-{info['snapshot']}.csv", "text/csv")
 
 # ------------------------------------------------------------------- Trends --
 elif page == "Trends":
@@ -193,14 +228,14 @@ elif page == "Trends":
     st.bar_chart(t["by_line"].drop(index="Total").T.rename(index=month_label), stack=True)
     st.dataframe(bl.style.map(color_change, subset=["Change"])
                  .format({**{m: money for m in months}, "Change": money, "Change %": lambda x: "" if x is None or pd.isna(x) else f"{x:+.1%}"}),
-                 use_container_width=True)
+                 width="stretch")
 
     for prefix, g in t["groups"].items():
         st.subheader(f"{prefix} call-out (all {prefix} tenants combined)")
         g = g.copy()
         g["Change"] = g[last] - g[first]
         st.dataframe(g.style.format(lambda x: f"{x:,.2f}" if isinstance(x, float) and x % 1 else f"{x:,.0f}")
-                     .map(color_change, subset=["Change"]), use_container_width=True)
+                     .map(color_change, subset=["Change"]), width="stretch")
         st.caption(f"Individual {prefix} tenants are still listed in the customer table below.")
 
         safe = "".join(ch if ch.isalnum() else "-" for ch in prefix).strip("-").lower() or "group"
@@ -213,9 +248,9 @@ elif page == "Trends":
             st.dataframe(gc.style.map(color_change, subset=["Change"])
                          .format({**{m: money for m in months}, "Change": money,
                                   "Change %": lambda x: "new" if x is None or pd.isna(x) else f"{x:+.1%}"}),
-                         hide_index=True, use_container_width=True, height=420,
+                         hide_index=True, width="stretch", height=420,
                          column_config={m: month_label(m) for m in months})
-            st.download_button(f"Download {prefix} tenants as CSV (with costs)", gc.to_csv(index=False),
+            st.download_button(f"Download {prefix} tenants as CSV (with costs)", safe_csv(gc),
                                f"{safe}-tenants-{first}-to-{last}.csv", "text/csv", key=f"dl-cost-{safe}")
 
         with tab_counts:
@@ -227,8 +262,8 @@ elif page == "Trends":
                 st.caption("License quantities only: no prices or costs, so this table is safe to send to the customer.")
                 st.dataframe(lc.style.map(lambda v: color_change(v), subset=[change_col])
                              .format({change_col: "{:+d}"}),
-                             hide_index=True, use_container_width=True, height=420)
-                st.download_button(f"Download {prefix} license counts as CSV (no costs)", lc.to_csv(index=False),
+                             hide_index=True, width="stretch", height=420)
+                st.download_button(f"Download {prefix} license counts as CSV (no costs)", safe_csv(lc),
                                    f"{safe}-license-counts-{first}-to-{last}.csv", "text/csv", key=f"dl-counts-{safe}")
 
     st.subheader("By customer (largest change first)")
@@ -245,19 +280,19 @@ elif page == "Trends":
         v = v[v["Change"].abs() > 0.005]
     st.dataframe(v.style.map(color_change, subset=["Change"])
                  .format({**{m: money for m in months}, "Change": money, "Change %": lambda x: "new" if x is None or pd.isna(x) else f"{x:+.1%}"}),
-                 hide_index=True, use_container_width=True, height=600,
+                 hide_index=True, width="stretch", height=600,
                  column_config={m: month_label(m) for m in months})
-    st.download_button("Download as CSV", v.to_csv(index=False), f"trend-{first}-to-{last}.csv", "text/csv")
+    st.download_button("Download as CSV", safe_csv(v), f"trend-{first}-to-{last}.csv", "text/csv")
 
 # -------------------------------------------------------------- Data status --
 else:
     st.title("Data status")
     runs = pd.read_sql("SELECT started_at, finished_at, status, message FROM runs ORDER BY id DESC LIMIT 30", con)
     st.subheader("Recent data collections")
-    st.dataframe(runs, hide_index=True, use_container_width=True)
+    st.dataframe(runs, hide_index=True, width="stretch")
     st.subheader("Usage reports stored")
     st.dataframe(pd.read_sql("SELECT month, line_count, fetched_at FROM billing_months ORDER BY month DESC", con),
-                 hide_index=True, use_container_width=True)
+                 hide_index=True, width="stretch")
     snaps = con.execute("SELECT COUNT(DISTINCT snap_date) n, MIN(snap_date) a, MAX(snap_date) b FROM license_snapshots").fetchone()
     st.write(f"Daily license snapshots: **{snaps['n']}** days ({snaps['a']} to {snaps['b']}). "
              f"History older than {config.RETENTION_MONTHS} months is removed automatically.")

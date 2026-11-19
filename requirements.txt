@@ -1,5 +1,5 @@
-requests==2.32.3
-pandas==2.2.3
-streamlit==1.40.2
-bcrypt==4.2.1
-openpyxl==3.1.5
+# Pinned versions. Dependabot (.github/dependabot.yml) proposes updates.
+requests==2.34.2
+pandas==2.3.3
+streamlit==1.67.0
+bcrypt==5.0.0

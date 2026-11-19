@@ -1,3 +1,11 @@
+# Don't reveal the nginx version in error pages and headers
+server_tokens off;
+
+# Rate limits per visitor address: plenty for normal use, but they slow down
+# floods of requests and of new connections.
+limit_req_zone  $binary_remote_addr zone=perip:10m rate=20r/s;
+limit_conn_zone $binary_remote_addr zone=connperip:10m;
+
 # Plain http only redirects to https.
 # __HTTPS_PORT_SUFFIX__ is filled in at start-up: empty for port 443, otherwise ":<port>".
 server {
@@ -12,11 +20,20 @@ server {
     ssl_certificate_key /etc/nginx/certs/server.key;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
+    ssl_session_tickets off;
 
     add_header Strict-Transport-Security "max-age=31536000" always;
     add_header X-Content-Type-Options nosniff always;
     add_header X-Frame-Options SAMEORIGIN always;
     add_header Referrer-Policy no-referrer always;
+    add_header Content-Security-Policy "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+    add_header Cross-Origin-Opener-Policy same-origin always;
+
+    limit_req  zone=perip burst=200 nodelay;
+    limit_conn connperip 50;
+    limit_req_status 429;
+    limit_conn_status 429;
 
     client_max_body_size 5m;
 

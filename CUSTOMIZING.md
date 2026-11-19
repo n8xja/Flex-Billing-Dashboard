@@ -38,6 +38,7 @@ Your settings and branding files are **never uploaded to GitHub** (`.gitignore` 
 | `BRAND_LOGO` | A logo at the top of the sidebar (see below) | `BRAND_LOGO=logo.png` |
 | `BRAND_ICON` | The little picture in the browser tab: an emoji or an image file | `BRAND_ICON=📊` or `BRAND_ICON=favicon.png` |
 | `BRAND_COLOR` | Accent colour for buttons and highlights, as a hex code in quotes | `BRAND_COLOR="#0f766e"` |
+| `THEME` | Light or dark appearance. `auto` follows each viewer's own device (dark if their computer is set to dark mode); `light` or `dark` forces one for everyone. | `THEME=dark` |
 
 Leave any of the optional ones empty to hide it.
 
@@ -49,6 +50,8 @@ Leave any of the optional ones empty to hide it.
 2. Copy it into the `branding` folder inside the project on the server. A file-copy tool such as **WinSCP** (Windows) or **Cyberduck** (Mac) works well; connect with the same server address, user name and password you use for `ssh`.
 3. Put the file's name (just the name, not a folder) in `.env`, for example `BRAND_LOGO=logo.png`.
 4. Restart (`bash stop.sh`, then `bash start.sh`).
+
+> **Dark mode tips:** pick a `BRAND_COLOR` that stands out on both white and near-black backgrounds (mid-tones such as `#2563eb` or `#0f766e` work well). For the logo, a PNG with a transparent background looks right in both modes.
 
 > **Finding a hex colour code:** search the web for "color picker", choose a colour, and copy the code that starts with `#`. Keep the quotes: `BRAND_COLOR="#0f766e"`.
 
@@ -85,6 +88,22 @@ Sophos tenants are billed one of three ways. You can rename how each appears on 
 
 ```
 GROUP_PREFIXES=Acme,Contoso
+```
+
+### Sign-in security
+
+| Setting | What it does | Default |
+|---|---|---|
+| `SESSION_TIMEOUT_MINUTES` | Signs a person out after this many minutes without using the dashboard | `120` |
+| `SIGNIN_MAX_FAILURES` | Wrong passwords in a row before that user name is locked | `5` |
+| `SIGNIN_LOCKOUT_MINUTES` | How long a locked user name stays locked | `15` |
+| `SIGNIN_MAX_PER_IP_PER_MINUTE` | Wrong passwords allowed per minute from one computer, whatever user name is tried | `10` |
+| `STREAMLIT_CLIENT_SHOW_ERROR_DETAILS` | Set to `type` to hide technical error details (tracebacks) from viewers. They still appear in `sudo docker compose logs web`. Leave unset while you're setting things up, since the details help with troubleshooting. | unset |
+
+Sign-ins, sign-outs, failed attempts and locks are written to the web log with the user name and computer address (never the password). To see them:
+
+```
+sudo docker compose logs web | grep sign
 ```
 
 ### Web address and certificate

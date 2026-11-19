@@ -5,6 +5,9 @@
 #
 # The ':z' on each folder lets containers use it on servers with SELinux
 # (Rocky / Red Hat). It is ignored on servers without SELinux (Ubuntu).
+#
+# Hardening: no container can gain extra privileges, and the two Python
+# containers (which run as an ordinary user) have every Linux capability removed.
 
 services:
   # Pulls data from Sophos every day (and when you press "Collect fresh data now")
@@ -12,6 +15,8 @@ services:
     build: .
     command: ["python", "-m", "app.collector"]
     env_file: .env
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
     volumes:
       - ./data:/data:z
     restart: unless-stopped
@@ -20,6 +25,8 @@ services:
   web:
     build: .
     env_file: .env
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
     environment:
       # The web page never needs the Sophos secret
       SOPHOS_CLIENT_ID: ""
@@ -36,6 +43,7 @@ services:
   # Encrypts the web traffic (https). Makes its own certificate on first start.
   proxy:
     build: ./nginx
+    security_opt: ["no-new-privileges:true"]
     ports:
       # LISTEN_ADDRESS (optional) limits the dashboard to one of the server's addresses
       - "${LISTEN_ADDRESS:+${LISTEN_ADDRESS}:}${HTTPS_PORT:-443}:443"

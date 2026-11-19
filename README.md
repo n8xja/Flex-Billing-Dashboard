@@ -15,7 +15,7 @@ It reads your partner account through the Sophos Central API (**read-only**), ke
 | **Trends** | Monthly billing by product line and by customer over 3, 6, 12 or 24 months, with growth in green and loss in red. Optional call-outs for groups of related tenants, each with a per-tenant breakout and a **license-counts table with no prices**, both downloadable as CSV (the cost-free one is safe to send to the customer). Product renames (e.g. MDR Complete → MDR Plus) are shown as moves, not as a loss plus a gain. |
 | **Data status** | Collection history and the monthly reports stored. |
 
-Everything can be renamed and branded (dashboard name, company name, logo, icon, accent colour, footer, labels) from one settings file. See **[CUSTOMIZING.md](CUSTOMIZING.md)**.
+Everything can be renamed and branded (dashboard name, company name, logo, icon, accent colour, light or dark mode, footer, labels) from one settings file. See **[CUSTOMIZING.md](CUSTOMIZING.md)**.
 
 ## Install
 

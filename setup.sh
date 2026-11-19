@@ -8,9 +8,13 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 
-mkdir -p data certs
+mkdir -p data certs branding
 # The dashboard runs as user number 1000 inside its container; let it write its data folder.
+# Only that user can read it: it holds your customers' license and billing data.
 sudo chown -R 1000:1000 data
+sudo chmod 700 data
+# The certificate's private key: readable by the server's administrator only
+sudo chmod 700 certs
 
 if [ ! -f .env ]; then
   cp .env.example .env

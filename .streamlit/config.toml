@@ -5,12 +5,15 @@ headless = true
 enableCORS = true
 enableXsrfProtection = true
 fileWatcherType = "none"
+# The dashboard has no file uploads; keep the limit tiny
+maxUploadSize = 1
 
 [browser]
 gatherUsageStats = false
 
 [client]
 toolbarMode = "minimal"
+# Error details shown in the page. Set STREAMLIT_CLIENT_SHOW_ERROR_DETAILS=type
+# in .env to hide tracebacks from viewers (they still appear in the web log).
 
-[theme]
-base = "light"
+# Light or dark is chosen by THEME in .env (see app/web.py).
