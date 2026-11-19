@@ -12,7 +12,8 @@ maxUploadSize = 1
 gatherUsageStats = false
 
 [client]
-toolbarMode = "minimal"
+# "viewer" shows the page menu (light/dark switch, print) but hides developer tools
+toolbarMode = "viewer"
 # Error details shown in the page. Set STREAMLIT_CLIENT_SHOW_ERROR_DETAILS=type
 # in .env to hide tracebacks from viewers (they still appear in the web log).
 

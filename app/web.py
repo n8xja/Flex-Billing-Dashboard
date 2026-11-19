@@ -1,8 +1,13 @@
-"""Starts the web dashboard with the chosen appearance (THEME in .env).
+"""Starts the web dashboard with the chosen appearance.
 
-THEME=auto   follows each viewer's device setting (light or dark)
-THEME=light  always light
-THEME=dark   always dark
+Both a light and a dark theme are set up, each in BRAND_COLOR, so people can
+switch between them in the menu at the top right of the page. Their browser
+remembers the choice for next time. THEME in .env only sets the starting
+point for someone who hasn't chosen yet:
+
+THEME=auto   follow the viewer's device setting (light or dark)
+THEME=light  start in light
+THEME=dark   start in dark
 """
 import os
 import sys
@@ -10,13 +15,20 @@ import sys
 from . import config
 
 
-def main():
+def args():
     here = os.path.dirname(os.path.abspath(__file__))
-    args = ["streamlit", "run", os.path.join(here, "dashboard.py")]
+    a = ["streamlit", "run", os.path.join(here, "dashboard.py"),
+         "--theme.light.primaryColor", config.BRAND_COLOR,
+         "--theme.dark.primaryColor", config.BRAND_COLOR]
     if config.THEME in ("light", "dark"):
-        args += ["--theme.base", config.THEME]
+        a += ["--theme.base", config.THEME]
+    return a
+
+
+def main():
+    a = args()
     sys.stdout.flush()
-    os.execvp(args[0], args)
+    os.execvp(a[0], a)
 
 
 if __name__ == "__main__":

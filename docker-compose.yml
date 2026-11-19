@@ -31,8 +31,6 @@ services:
       # The web page never needs the Sophos secret
       SOPHOS_CLIENT_ID: ""
       SOPHOS_CLIENT_SECRET: ""
-      # Accent colour for buttons and highlights (BRAND_COLOR in .env)
-      STREAMLIT_THEME_PRIMARY_COLOR: ${BRAND_COLOR:-#2563eb}
     volumes:
       - ./data:/data:z
       - ./branding:/branding:ro,z

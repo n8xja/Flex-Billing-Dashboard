@@ -3,6 +3,7 @@
 Every setting has a neutral default. See CUSTOMIZING.md for what each one does.
 """
 import os
+import re
 from pathlib import Path
 
 
@@ -61,10 +62,16 @@ def branding_file(name):
     return None
 
 
-# Appearance: "auto" follows each viewer's device (light or dark), or force "light" / "dark".
+# Appearance. Each person can switch between light and dark in the menu (top
+# right); their browser remembers the choice. THEME is the starting point for
+# someone who hasn't chosen yet: "auto" follows their device, or "light"/"dark".
 THEME = _env("THEME", "auto").lower()
 if THEME not in ("auto", "light", "dark"):
     THEME = "auto"
+# Accent colour, used in both the light and dark themes
+BRAND_COLOR = _env("BRAND_COLOR", "#2563eb").strip('"').strip("'")
+if not re.fullmatch(r"#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?", BRAND_COLOR):
+    BRAND_COLOR = "#2563eb"
 
 # ------------------------------------------------------------- security --
 SESSION_TIMEOUT_MINUTES = int(_env("SESSION_TIMEOUT_MINUTES", "120"))   # sign out after this long idle

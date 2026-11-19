@@ -38,7 +38,7 @@ Your settings and branding files are **never uploaded to GitHub** (`.gitignore` 
 | `BRAND_LOGO` | A logo at the top of the sidebar (see below) | `BRAND_LOGO=logo.png` |
 | `BRAND_ICON` | The little picture in the browser tab: an emoji or an image file | `BRAND_ICON=📊` or `BRAND_ICON=favicon.png` |
 | `BRAND_COLOR` | Accent colour for buttons and highlights, as a hex code in quotes | `BRAND_COLOR="#0f766e"` |
-| `THEME` | Light or dark appearance. `auto` follows each viewer's own device (dark if their computer is set to dark mode); `light` or `dark` forces one for everyone. | `THEME=dark` |
+| `THEME` | The starting appearance for someone who hasn't chosen one yet. `auto` follows their device (dark if their computer is set to dark mode); `light` or `dark` starts everyone in that mode. Each person can still switch (see below). | `THEME=dark` |
 
 Leave any of the optional ones empty to hide it.
 
@@ -50,6 +50,8 @@ Leave any of the optional ones empty to hide it.
 2. Copy it into the `branding` folder inside the project on the server. A file-copy tool such as **WinSCP** (Windows) or **Cyberduck** (Mac) works well; connect with the same server address, user name and password you use for `ssh`.
 3. Put the file's name (just the name, not a folder) in `.env`, for example `BRAND_LOGO=logo.png`.
 4. Restart (`bash stop.sh`, then `bash start.sh`).
+
+> **How people switch between light and dark:** open the menu **⋮** at the top right of the dashboard and choose a theme. The choice is saved in that web browser, so it's still there at the next sign-in. It's remembered per browser and computer, not per user name: a different computer starts from `THEME` again, and two people sharing one browser share the choice. (The dashboard is built on Streamlit, which only lets the browser change the theme, not the app itself.) Both themes use your `BRAND_COLOR`.
 
 > **Dark mode tips:** pick a `BRAND_COLOR` that stands out on both white and near-black backgrounds (mid-tones such as `#2563eb` or `#0f766e` work well). For the logo, a PNG with a transparent background looks right in both modes.
 

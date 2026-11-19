@@ -131,6 +131,8 @@ with st.sidebar:
     elif st.button("Collect fresh data now"):
         config.REFRESH_FLAG.touch()
         st.rerun()
+    st.caption("Light or dark: open the menu **⋮** at the top right of the page and pick a theme. "
+               "This browser remembers your choice.")
     if st.button("Sign out"):
         users.log.info("signed out: user=%r", st.session_state.user)
         st.session_state.clear()
