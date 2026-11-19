@@ -1,4 +1,4 @@
-FROM nginx:1.27-alpine
+FROM nginx:1.29-alpine
 RUN apk add --no-cache openssl
 # The settings are written from this template at start-up (see 10-prepare.sh)
 COPY default.conf.template /etc/nginx/default.conf.template
