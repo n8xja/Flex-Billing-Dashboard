@@ -35,7 +35,7 @@ FIREWALL_STALE_DAYS = int(_env("FIREWALL_STALE_DAYS", "35"))
 BILLING_DAY = int(_env("BILLING_DAY", "22"))
 
 # ------------------------------------------------------------ branding --
-BRAND_NAME = _env("BRAND_NAME", "Flex Billing Dashboard")
+BRAND_NAME = _env("BRAND_NAME", "MSP Partner Console")
 BRAND_ORG = _env("BRAND_ORG")                  # your company name, shown in the sidebar
 BRAND_TAGLINE = _env("BRAND_TAGLINE")          # short line under the sign-in title
 BRAND_FOOTER = _env("BRAND_FOOTER")            # e.g. "Questions? support@example.com"

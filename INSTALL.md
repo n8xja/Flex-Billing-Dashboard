@@ -1,4 +1,4 @@
-# Installing the Flex Billing Dashboard
+# Installing the MSP Partner Console
 
 This guide is written for someone who has never used Docker or Linux before. Go slowly, do one step at a time, and copy and paste the commands exactly. Nothing here can harm your Sophos account: the dashboard can only **read** from Sophos, never change anything.
 
@@ -25,7 +25,7 @@ It runs in **Docker**, which keeps the website in its own sealed box on the serv
    **Not sure which one you have?** After you connect in step 3, type `cat /etc/os-release` and look at the `NAME=` line. Only step 4 is different between them; every other step is the same.
 2. **The server's address**, for example `10.0.0.25`. Your network person can tell you, or see step 3.
 3. **A computer on the same network** (Windows or Mac) to do the setup from and to view the dashboard.
-4. **The project's page on GitHub:** https://github.com/n8xja/Flex-Billing-Dashboard
+4. **The project's page on GitHub:** https://github.com/n8xja/msp-partner-console
 5. *Only if you'll change the code:* a free **GitHub account** at https://github.com, for keeping your own copy (see step 2). Changing the name, logo, colours and labels doesn't count; those are settings, not code.
 
 ---
@@ -229,13 +229,13 @@ You should see something like `git version 2.43.0`. Any number is fine. If it sa
 Paste this line exactly and press Enter:
 
 ```
-git clone https://github.com/n8xja/Flex-Billing-Dashboard.git
+git clone https://github.com/n8xja/msp-partner-console.git
 ```
 
 **What you should see**, finishing in a few seconds:
 
 ```
-Cloning into 'Flex-Billing-Dashboard'...
+Cloning into 'msp-partner-console'...
 remote: Enumerating objects: ...
 Receiving objects: 100% ...
 Resolving deltas: 100% ...
@@ -249,10 +249,10 @@ The last line may differ slightly. What matters is that the `$` prompt comes bac
 
 ### 5.4 Go into the project folder and look around
 
-Cloning made a folder called `Flex-Billing-Dashboard`. Go into it:
+Cloning made a folder called `msp-partner-console`. Go into it:
 
 ```
-cd Flex-Billing-Dashboard
+cd msp-partner-console
 ```
 
 List what's inside:
@@ -263,14 +263,14 @@ ls
 
 You should see names including `INSTALL.md`, `README.md`, `app`, `docker-compose.yml`, `setup.sh` and `start.sh`. If you do, the clone worked.
 
-> **Remember this:** every time you come back to the server, type `cd ~/Flex-Billing-Dashboard` first. All the commands in this guide are run from inside that folder.
+> **Remember this:** every time you come back to the server, type `cd ~/msp-partner-console` first. All the commands in this guide are run from inside that folder.
 
 ### 5.5 If the clone didn't work
 
 | What you see | What it means and what to do |
 |---|---|
 | `git: command not found` | Git isn't installed yet. Do step 4 again, then try 5.3. |
-| `fatal: destination path 'Flex-Billing-Dashboard' already exists` | You've already cloned it. Nothing's wrong. Type `cd ~/Flex-Billing-Dashboard` and carry on. To get the newest version, use `bash update.sh`. |
+| `fatal: destination path 'msp-partner-console' already exists` | You've already cloned it. Nothing's wrong. Type `cd ~/msp-partner-console` and carry on. To get the newest version, use `bash update.sh`. |
 | It asks for a `Username for 'https://github.com'` | GitHub couldn't find a public project at that address. Either the address has a typo (check it letter by letter; capital letters matter), or the project is private and you need the sign-in in the box under 5.3. Press **Ctrl + C** to cancel, fix it, and try again. |
 | `fatal: repository '...' not found` | Same as above: a typo in the address, or a private project you haven't signed in to. |
 | `Could not resolve host: github.com` or `Failed to connect` | The server can't reach the internet. Ask your network team to allow the server to reach `github.com` on port 443 (HTTPS). |
@@ -370,7 +370,7 @@ You don't need to do anything day to day. Data updates itself every morning.
 - **Before your distributor's billing day each month** (the `BILLING_DAY` setting), open **Flex changes** and update customer invoices for any differences. You can click **Collect fresh data now** in the left sidebar to get up-to-the-minute counts first.
 - **Download as CSV** under each table gives you a spreadsheet copy.
 
-**Handy commands** (connect as in step 3, then `cd ~/Flex-Billing-Dashboard` first):
+**Handy commands** (connect as in step 3, then `cd ~/msp-partner-console` first):
 
 | To do this | Type |
 |---|---|
@@ -456,7 +456,7 @@ Paste one line at a time. Replace `8443` with your port number.
 | The program (this project) | GitHub | **Yes.** Rebuild any time with steps 4 to 9. |
 | Your settings, incl. branding text (`.env`) | Only on the server | **No, on purpose**, because it holds your Sophos secret. If the server is lost, make a new Sophos credential (step 1) and redo your settings. Keep a note of your branding choices somewhere safe. |
 | Your logo and icon (`branding` folder) | Only on the server | **No.** Keep the original files on your computer. |
-| Collected history (`data` folder) | Only on the server | **No.** Monthly billing reports re-download automatically, but daily license snapshots can't be recreated. If your data center already backs up this server, ask for the `Flex-Billing-Dashboard/data` folder to be included. |
+| Collected history (`data` folder) | Only on the server | **No.** Monthly billing reports re-download automatically, but daily license snapshots can't be recreated. If your data center already backs up this server, ask for the `msp-partner-console/data` folder to be included. |
 | Sign-ins (`data/users.json`) | Only on the server | **No.** Recreate them with step 8. |
 
 The `.gitignore` file stops your secret, settings, data, certificates and branding files from ever being uploaded to GitHub.
@@ -468,7 +468,7 @@ The `.gitignore` file stops your secret, settings, data, certificates and brandi
 | What you see | What to do |
 |---|---|
 | `Permission denied` when running a command | Put `sudo ` in front of it, or make sure you typed `bash` before the script name. |
-| `No such file or directory` | You're probably not in the project folder. Type `cd ~/Flex-Billing-Dashboard` and try again. |
+| `No such file or directory` | You're probably not in the project folder. Type `cd ~/msp-partner-console` and try again. |
 | Browser says it can't connect | Run `bash status.sh`. All three parts should say **Up** or **running**. If not, run `bash start.sh`. If they're running, the server's firewall is probably blocking the page: run `bash open-firewall.sh` (see "Opening ports in the server's firewall"). If it still fails, ask your network person whether the port is blocked between your computer and the server. |
 | `PermissionError: [Errno 13] Permission denied: '/branding/...'` | The `branding` folder is private to your server user. Fixed in a later version of the project: run `bash update.sh`, then `bash start.sh`. |
 | **502 Bad Gateway** | The secure proxy can't reach the dashboard behind it. Right after `bash start.sh` or `bash update.sh`, wait a minute and reload: the dashboard takes a moment to start. If it continues, run `bash status.sh`: the **web** line should say *running*. If it does, run `sudo docker compose restart proxy` (older versions of the project kept the dashboard's old address after an update; `bash update.sh` fixes that for good). If **web** says *restarting* or *exited*, send the output of `sudo docker compose logs --tail 40 web` to whoever supports your setup. |

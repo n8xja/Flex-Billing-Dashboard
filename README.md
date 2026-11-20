@@ -1,6 +1,8 @@
-# Flex Billing Dashboard for Sophos Central partners
+# MSP Partner Console for Sophos Central partners
 
-A small, self-hosted web dashboard that helps Sophos Central MSP partners close the gap between what Sophos bills them for MSP Flex (usage-based) licensing and what they charge their own customers.
+Self-hosted console for Sophos Central MSP partners: Flex billing reconciliation, tenant onboarding, role-based access and audit.
+
+Today it helps partners close the gap between what Sophos bills them for MSP Flex (usage-based) licensing and what they charge their own customers. Tenant onboarding, role-based access and a tamper-evident audit log are being designed next.
 
 It reads your partner account through the Sophos Central API (**read-only**), keeps up to 24 months of history in a local database, and shows you where quantities have changed since the last bill.
 

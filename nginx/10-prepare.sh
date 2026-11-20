@@ -15,7 +15,7 @@ sed "s/__HTTPS_PORT_SUFFIX__/$SUFFIX/" /etc/nginx/default.conf.template > /etc/n
 echo "Web page on https port $PORT"
 
 CERTS=/etc/nginx/certs
-NAME="${CERT_NAME:-billing-dashboard}"
+NAME="${CERT_NAME:-partner-console}"
 if [ ! -f "$CERTS/server.crt" ] || [ ! -f "$CERTS/server.key" ]; then
   echo "No certificate found; creating a self-signed one for $NAME (valid 825 days)"
   mkdir -p "$CERTS"

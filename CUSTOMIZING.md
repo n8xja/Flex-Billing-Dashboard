@@ -12,7 +12,7 @@ Your settings and branding files are **never uploaded to GitHub** (`.gitignore` 
 
 1. Connect to the server and go to the project folder (INSTALL.md, step 3):
    ```
-   cd Flex-Billing-Dashboard
+   cd msp-partner-console
    ```
 2. Open the settings file:
    ```
@@ -112,7 +112,7 @@ sudo docker compose logs web | grep sign
 
 | Setting | What it does | Default |
 |---|---|---|
-| `SERVER_NAME` | The name people type in the browser. Used in the self-signed certificate. | `billing-dashboard` |
+| `SERVER_NAME` | The name people type in the browser. Used in the self-signed certificate. | `partner-console` |
 | `HTTPS_PORT` | The port for the secure web page | `443` |
 | `HTTP_PORT` | The plain-HTTP port. It only redirects visitors to the secure page, keeping the port number. | `80` |
 | `LISTEN_ADDRESS` | Listen on only one of the server's IP addresses, e.g. `10.0.0.25`. Useful on servers with more than one network card. Leave empty to listen on all of them. | empty |
